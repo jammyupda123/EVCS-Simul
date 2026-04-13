@@ -371,18 +371,13 @@ function calcCost(chargers, sheet5, matRate, labRate){
   const miscMat=Math.floor(wireMat*0.02);
   directMat+=miscMat; directLab+=toolFee;
   const indirectLab=Math.floor(directLab*0.13);
-  const totalLab=directLab+indirectLab;
-  const indInsurance=Math.floor(totalLab*0.037);
-  const empInsurance=Math.floor(totalLab*0.0101);
   const otherExp=Math.floor((directMat+directLab)*0.058);
-  const expenses=indirectLab+indInsurance+empInsurance+otherExp;
+  const expenses=indirectLab+otherExp;
   const netCost=directMat+directLab+expenses;
-  const adminFee=Math.floor(netCost*0.06);
-  const profit=Math.floor((totalLab+indInsurance+empInsurance+otherExp+adminFee)*0.10);
-  const totalAddCost=netCost+adminFee+profit;
+  const totalAddCost=netCost;
 
-  return{unitCost,unitDetail,directMat,directLab,indirectLab,indInsurance,empInsurance,otherExp,
-    netCost,adminFee,profit,totalAddCost,grandTotal:unitCost+totalAddCost};
+  return{unitCost,unitDetail,directMat,directLab,indirectLab,otherExp,
+    netCost,totalAddCost,grandTotal:unitCost+totalAddCost};
 }
 
 // ═══ 자동계산 엔진 ═══
@@ -846,11 +841,7 @@ function showCostSummary(c){
     <tr><th></th><td style="font-size:11px">직접재료비</td><td style="text-align:right;font-size:11px">${fmt(c.directMat)}</td></tr>
     <tr><th></th><td style="font-size:11px">직접노무비</td><td style="text-align:right;font-size:11px">${fmt(c.directLab)}</td></tr>
     <tr><th></th><td style="font-size:11px">간접노무비 (13%)</td><td style="text-align:right;font-size:11px">${fmt(c.indirectLab)}</td></tr>
-    <tr><th></th><td style="font-size:11px">산재보험료 (3.7%)</td><td style="text-align:right;font-size:11px">${fmt(c.indInsurance)}</td></tr>
-    <tr><th></th><td style="font-size:11px">고용보험료 (1.01%)</td><td style="text-align:right;font-size:11px">${fmt(c.empInsurance)}</td></tr>
-    <tr><th></th><td style="font-size:11px">기타경비 (5.8%)</td><td style="text-align:right;font-size:11px">${fmt(c.otherExp)}</td></tr>
-    <tr><th></th><td style="font-size:11px">일반관리비 (6%)</td><td style="text-align:right;font-size:11px">${fmt(c.adminFee)}</td></tr>
-    <tr><th></th><td style="font-size:11px">이윤 (10%)</td><td style="text-align:right;font-size:11px">${fmt(c.profit)}</td></tr>`;
+    <tr><th></th><td style="font-size:11px">기타경비 (5.8%)</td><td style="text-align:right;font-size:11px">${fmt(c.otherExp)}</td></tr>`;
   }
   if(c.extraTotal>0){
     h+=`<tr style="background:#FEF2F2"><th colspan="2">기타 추가비용</th><td style="text-align:right;font-weight:600">${fmt(c.extraTotal)}</td></tr>`;
