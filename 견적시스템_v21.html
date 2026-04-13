@@ -1133,6 +1133,10 @@ function loadFromLS(){
 
 document.addEventListener('input',e=>{if(e.target.closest('.wrap'))saveToLS();});
 document.addEventListener('change',e=>{if(e.target.closest('.wrap'))saveToLS();});
+// iframe 안에서 저장 시 부모(시뮬레이션)에게 알림
+function notifyParent(){if(window!==window.top)try{window.parent.postMessage({type:'est_saved',data:localStorage.getItem(LS_KEY)},'*');}catch(e){}}
+const _origSave=saveToLS;
+saveToLS=function(){_origSave();notifyParent();};
 loadFromLS();
 // 복원 후 충전기 수량이 있으면 자동 계산
 setTimeout(()=>{
