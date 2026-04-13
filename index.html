@@ -1180,6 +1180,17 @@ function _saveLS() {
   }));
   return _saveLS.apply(this, arguments);
 }
+
+// 견적 iframe 변경 → Firebase 동기화
+window.addEventListener('message',async function(e){
+  if(e.data&&e.data.type==='est_saved'){
+    try{
+      var saved=loadLS();
+      if(saved){saved.estimateData=e.data.data;await saveLS(saved);}
+    }catch(err){}
+  }
+});
+
 function exportData(data) {
   var json = JSON.stringify(data, null, 2);
   var blob = new Blob([json], {
@@ -1322,6 +1333,7 @@ function App() {
               if(data.simMap) setSimMap(data.simMap);
               if(data.logMap) setLogMap(data.logMap);
               if(data.fileMap) setFileMap(data.fileMap);
+              if(data.estimateData) localStorage.setItem('est_v21_data',data.estimateData);
               setSyncStatus('synced');
             }, function(err){
               console.warn('Firebase 리스너 오류:', err);
@@ -1449,7 +1461,8 @@ function App() {
         costMap: costMap,
         simMap: simMap,
         logMap: logMap,
-        fileMap: fileMap
+        fileMap: fileMap,
+        estimateData: localStorage.getItem('est_v21_data')
       }).then(function(){ setSyncStatus('synced'); });
     }, 1000);
     return function(){ clearTimeout(timer); };
@@ -9739,6 +9752,16 @@ async function saveLS(d){
   }
 }
 
+// 견적 iframe 변경 → Firebase 동기화
+window.addEventListener('message',async function(e){
+  if(e.data&&e.data.type==='est_saved'){
+    try{
+      var saved=loadLS();
+      if(saved){saved.estimateData=e.data.data;await saveLS(saved);}
+    }catch(err){}
+  }
+});
+
 // 데이터 내보내기 (JSON 파일 다운로드)
 function exportData(data){
   const json=JSON.stringify(data,null,2);
@@ -9811,6 +9834,7 @@ function App(){
         if(data.simMap) setSimMap(data.simMap);
         if(data.logMap) setLogMap(data.logMap);
         if(data.fileMap) setFileMap(data.fileMap);
+        if(data.estimateData) localStorage.setItem('est_v21_data',data.estimateData);
         setSyncStatus('synced');
       }, err=>{
         console.warn('Firebase 리스너 오류:', err);
@@ -9883,7 +9907,7 @@ function App(){
     if(!dataLoaded) return;
     setSyncStatus('saving');
     const timer=setTimeout(async()=>{
-      await saveLS({sites,sid,nid,costMap,simMap,logMap,fileMap});
+      await saveLS({sites,sid,nid,costMap,simMap,logMap,fileMap,estimateData:localStorage.getItem('est_v21_data')});
       setSyncStatus('synced');
     },1000);
     return ()=>clearTimeout(timer);
