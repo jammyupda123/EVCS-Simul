@@ -1593,7 +1593,8 @@ function App() {
         costMap: costMap,
         simMap: simMap,
         logMap: logMap,
-        fileMap: fileMap
+        fileMap: fileMap,
+        estimateData: localStorage.getItem('est_v21_data')
       });
     },
     style: {
@@ -1615,6 +1616,7 @@ function App() {
         setNid(data.nid || 10);
         setCostMap(data.costMap);
         setSimMap(data.simMap);
+        if(data.estimateData)localStorage.setItem('est_v21_data',data.estimateData);
       });
     },
     style: {
@@ -9940,11 +9942,11 @@ function App(){
           transition:'all .3s'}}>
           {syncStatus==='synced'?'🟢 동기화됨':syncStatus==='saving'?'🔄 저장중':syncStatus==='offline'?'🔴 오프라인':'⏳ 연결중'}
         </span>
-        <button onClick={()=>exportData({sites,sid,nid,costMap,simMap,logMap,fileMap})}
+        <button onClick={()=>exportData({sites,sid,nid,costMap,simMap,logMap,fileMap,estimateData:localStorage.getItem('est_v21_data')})}
           style={{background:'none',border:'1px solid rgba(255,255,255,.25)',borderRadius:4,padding:'3px 9px',fontSize:10,color:'rgba(255,255,255,.75)',cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>
           ⬇ 백업
         </button>
-        <button onClick={()=>importData(data=>{ setSites(data.sites); setSid(data.sid); setNid(data.nid||10); setCostMap(data.costMap); setSimMap(data.simMap); })}
+        <button onClick={()=>importData(data=>{ setSites(data.sites); setSid(data.sid); setNid(data.nid||10); setCostMap(data.costMap); setSimMap(data.simMap); if(data.estimateData)localStorage.setItem('est_v21_data',data.estimateData); })}
           style={{background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.25)',borderRadius:4,padding:'3px 9px',fontSize:10,color:'rgba(255,255,255,.9)',cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>
           ⬆ 복원
         </button>
