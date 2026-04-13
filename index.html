@@ -1939,7 +1939,7 @@ function App() {
     setViewMode: setViewMode
   }), /*#__PURE__*/React.createElement("div", {
     className: "tabs"
-  }, [['sim', '📊 시뮬레이션'], ['costs', '🔧 공사비 계산'], ['compare', '⚖️ 전체 비교'], ['info', '🏢 현장 정보'], ['log', '📅 진행사항'], ['files', '📎 자료']].map(function (_ref3) {
+  }, [['sim', '📊 시뮬레이션'], ['costs', '🔧 공사비 계산'], ['compare', '⚖️ 전체 비교'], ['info', '🏢 현장 정보'], ['log', '📅 진행사항'], ['files', '📎 자료'], ['estimate', '📐 견적서']].map(function (_ref3) {
     var _ref4 = _slicedToArray(_ref3, 2),
       t = _ref4[0],
       l = _ref4[1];
@@ -2012,6 +2012,9 @@ function App() {
     site: site,
     files: siteFiles,
     updFile: updFile
+  }), tab === 'estimate' && /*#__PURE__*/React.createElement("iframe", {
+    src: "견적시스템_v21.html",
+    style: {width:"100%",height:"calc(100vh - 180px)",border:"none",borderRadius:"7px"}
   })))) : /*#__PURE__*/React.createElement("div", {
     className: "no-site"
   }, /*#__PURE__*/React.createElement("span", {
@@ -10041,7 +10044,7 @@ function App(){
         {site?<>
           <Topbar site={site} cd={cd} ct={ct} sm={sm} onUpdateSite={updSite} onPrint={()=>window.print()} onPrintAll={doPrintAll} viewMode={viewMode} setViewMode={setViewMode}/>
           <div className="tabs">
-            {[['sim','📊 시뮬레이션'],['costs','🔧 공사비 계산'],['compare','⚖️ 전체 비교'],['info','🏢 현장 정보'],['log','📅 진행사항'],['files','📎 자료']].map(([t,l])=>(
+            {[['sim','📊 시뮬레이션'],['costs','🔧 공사비 계산'],['compare','⚖️ 전체 비교'],['info','🏢 현장 정보'],['log','📅 진행사항'],['files','📎 자료'],['estimate','📐 견적서']].map(([t,l])=>(
               <div key={t} className={`tab ${tab===t?'active':''}`} onClick={()=>setTab(t)}>{l}</div>
             ))}
           </div>
@@ -10058,6 +10061,7 @@ function App(){
               {tab==='info'    && <InfoTab    site={site} cd={cd} ct={ct} sm={sm}/>}
               {tab==='log'     && <LogTab     site={site} logs={siteLogs} updLog={updLog}/>}
               {tab==='files'   && <FilesTab   site={site} files={siteFiles} updFile={updFile}/>}
+              {tab==='estimate' && <iframe src="견적시스템_v21.html" style={{width:'100%',height:'calc(100vh - 180px)',border:'none',borderRadius:'7px'}}/>}
             </>}
           </div>
         </>:<div className="no-site"><span style={{fontSize:32}}>⚡</span><span>현장을 선택하세요</span></div>}
