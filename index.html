@@ -1186,7 +1186,7 @@ window.addEventListener('message',async function(e){
   if(e.data&&e.data.type==='est_saved'){
     try{
       var saved=loadLS();
-      if(saved){saved.estimateData=e.data.data;await saveLS(saved);}
+      if(saved){if(!saved.estimateMap)saved.estimateMap={};saved.estimateMap[e.data.siteId||'default']=e.data.data;await saveLS(saved);}
     }catch(err){}
   }
 });
@@ -1333,7 +1333,7 @@ function App() {
               if(data.simMap) setSimMap(data.simMap);
               if(data.logMap) setLogMap(data.logMap);
               if(data.fileMap) setFileMap(data.fileMap);
-              if(data.estimateData) localStorage.setItem('est_v21_data',data.estimateData);
+              if(data.estimateMap){Object.entries(data.estimateMap).forEach(function(kv){localStorage.setItem('est_v21_'+kv[0],kv[1]);});}
               setSyncStatus('synced');
             }, function(err){
               console.warn('Firebase 리스너 오류:', err);
@@ -1462,11 +1462,22 @@ function App() {
         simMap: simMap,
         logMap: logMap,
         fileMap: fileMap,
-        estimateData: localStorage.getItem('est_v21_data')
+        estimateMap: (function(){var m={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith('est_v21_'))m[k.replace('est_v21_','')]=localStorage.getItem(k);}return m;})()
       }).then(function(){ setSyncStatus('synced'); });
     }, 1000);
     return function(){ clearTimeout(timer); };
   }, [sites, sid, nid, costMap, simMap, logMap, fileMap, dataLoaded]);
+
+  // sid 변경 시 견적 iframe에 현장 전환 알림
+  useEffect(function(){
+    if(!dataLoaded)return;
+    var iframe=document.querySelector('iframe[src*="견적시스템"]');
+    if(iframe&&iframe.contentWindow){
+      var estData=localStorage.getItem('est_v21_'+sid)||null;
+      iframe.contentWindow.postMessage({type:'est_switch_site',siteId:String(sid),data:estData},'*');
+    }
+  },[sid,dataLoaded]);
+
   var site = sites.find(function (s) {
     return s.id === sid;
   });
@@ -1607,7 +1618,7 @@ function App() {
         simMap: simMap,
         logMap: logMap,
         fileMap: fileMap,
-        estimateData: localStorage.getItem('est_v21_data')
+        estimateMap: (function(){var m={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith('est_v21_'))m[k.replace('est_v21_','')]=localStorage.getItem(k);}return m;})()
       });
     },
     style: {
@@ -1629,7 +1640,7 @@ function App() {
         setNid(data.nid || 10);
         setCostMap(data.costMap);
         setSimMap(data.simMap);
-        if(data.estimateData)localStorage.setItem('est_v21_data',data.estimateData);
+        if(data.estimateMap){Object.entries(data.estimateMap).forEach(function(kv){localStorage.setItem('est_v21_'+kv[0],kv[1]);});}
       });
     },
     style: {
@@ -9757,7 +9768,7 @@ window.addEventListener('message',async function(e){
   if(e.data&&e.data.type==='est_saved'){
     try{
       var saved=loadLS();
-      if(saved){saved.estimateData=e.data.data;await saveLS(saved);}
+      if(saved){if(!saved.estimateMap)saved.estimateMap={};saved.estimateMap[e.data.siteId||'default']=e.data.data;await saveLS(saved);}
     }catch(err){}
   }
 });
@@ -9834,7 +9845,7 @@ function App(){
         if(data.simMap) setSimMap(data.simMap);
         if(data.logMap) setLogMap(data.logMap);
         if(data.fileMap) setFileMap(data.fileMap);
-        if(data.estimateData) localStorage.setItem('est_v21_data',data.estimateData);
+        if(data.estimateMap){Object.entries(data.estimateMap).forEach(([k,v])=>localStorage.setItem('est_v21_'+k,v));}
         setSyncStatus('synced');
       }, err=>{
         console.warn('Firebase 리스너 오류:', err);
@@ -9907,11 +9918,21 @@ function App(){
     if(!dataLoaded) return;
     setSyncStatus('saving');
     const timer=setTimeout(async()=>{
-      await saveLS({sites,sid,nid,costMap,simMap,logMap,fileMap,estimateData:localStorage.getItem('est_v21_data')});
+      await saveLS({sites,sid,nid,costMap,simMap,logMap,fileMap,estimateMap:(()=>{const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('est_v21_'))m[k.replace('est_v21_','')]=localStorage.getItem(k);}return m;})()});
       setSyncStatus('synced');
     },1000);
     return ()=>clearTimeout(timer);
   },[sites,sid,nid,costMap,simMap,logMap,fileMap,dataLoaded]);
+
+  // sid 변경 시 견적 iframe에 현장 전환 알림
+  useEffect(()=>{
+    if(!dataLoaded)return;
+    const iframe=document.querySelector('iframe[src*="견적시스템"]');
+    if(iframe&&iframe.contentWindow){
+      const estData=localStorage.getItem('est_v21_'+sid)||null;
+      iframe.contentWindow.postMessage({type:'est_switch_site',siteId:String(sid),data:estData},'*');
+    }
+  },[sid,dataLoaded]);
 
   const site=sites.find(s=>s.id===sid);
   const cd=costMap[sid]||{...COST0,chargerItems:[...COST0.chargerItems]};
@@ -9966,11 +9987,11 @@ function App(){
           transition:'all .3s'}}>
           {syncStatus==='synced'?'🟢 동기화됨':syncStatus==='saving'?'🔄 저장중':syncStatus==='offline'?'🔴 오프라인':'⏳ 연결중'}
         </span>
-        <button onClick={()=>exportData({sites,sid,nid,costMap,simMap,logMap,fileMap,estimateData:localStorage.getItem('est_v21_data')})}
+        <button onClick={()=>exportData({sites,sid,nid,costMap,simMap,logMap,fileMap,estimateMap:(()=>{const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('est_v21_'))m[k.replace('est_v21_','')]=localStorage.getItem(k);}return m;})()})}
           style={{background:'none',border:'1px solid rgba(255,255,255,.25)',borderRadius:4,padding:'3px 9px',fontSize:10,color:'rgba(255,255,255,.75)',cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>
           ⬇ 백업
         </button>
-        <button onClick={()=>importData(data=>{ setSites(data.sites); setSid(data.sid); setNid(data.nid||10); setCostMap(data.costMap); setSimMap(data.simMap); if(data.estimateData)localStorage.setItem('est_v21_data',data.estimateData); })}
+        <button onClick={()=>importData(data=>{ setSites(data.sites); setSid(data.sid); setNid(data.nid||10); setCostMap(data.costMap); setSimMap(data.simMap); if(data.estimateMap){Object.entries(data.estimateMap).forEach(([k,v])=>localStorage.setItem('est_v21_'+k,v));} })}
           style={{background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.25)',borderRadius:4,padding:'3px 9px',fontSize:10,color:'rgba(255,255,255,.9)',cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>
           ⬆ 복원
         </button>
