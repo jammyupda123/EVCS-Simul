@@ -1080,6 +1080,8 @@ if(window!==window.top){document.documentElement.style.overflow='visible';docume
 
 // ═══ localStorage 자동저장 ═══
 const LS_KEY='est_v21_data';
+let _currentSiteId=null;
+function getSiteKey(){return _currentSiteId?'est_v21_'+_currentSiteId:LS_KEY;}
 const SAVE_FIELDS=['site_name','site_addr','site_detail','est_date','business_type','work_time','install_env','supply_type',
   'c_7w_n','c_7w_r','c_7w_s','c_7w_d','c_7w_ds','c_7s_n','c_7s_r','c_7s_s','c_7s_d','c_7s_ds',
   'c_50_n','c_50_r','c_50_s','c_50_d','c_50_ds','c_100_n','c_100_r','c_100_s','c_100_d','c_100_ds',
@@ -1107,12 +1109,12 @@ function saveToLS(){
     ['name','spec','unit','qty','price'].forEach(f=>{const el=tr.querySelector(`[data-f="${f}"]`);if(el)r[f]=el.value;});
     d._extras.push(r);
   });
-  try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){}
+  try{localStorage.setItem(getSiteKey(),JSON.stringify(d));}catch(e){}
 }
 
 function loadFromLS(){
   try{
-    const raw=localStorage.getItem(LS_KEY);if(!raw)return;
+    const raw=localStorage.getItem(getSiteKey());if(!raw)return;
     const d=JSON.parse(raw);
     SAVE_FIELDS.forEach(id=>{const el=document.getElementById(id);if(el&&d[id]!==undefined)el.value=d[id];});
     if(d.panel_count)updatePanels();
@@ -1134,9 +1136,45 @@ function loadFromLS(){
 document.addEventListener('input',e=>{if(e.target.closest('.wrap'))saveToLS();});
 document.addEventListener('change',e=>{if(e.target.closest('.wrap'))saveToLS();});
 // iframe 안에서 저장 시 부모(시뮬레이션)에게 알림
-function notifyParent(){if(window!==window.top)try{window.parent.postMessage({type:'est_saved',data:localStorage.getItem(LS_KEY)},'*');}catch(e){}}
+function notifyParent(){if(window!==window.top)try{window.parent.postMessage({type:'est_saved',siteId:_currentSiteId,data:localStorage.getItem(getSiteKey())},'*');}catch(e){}}
+
+function clearForm(){
+  SAVE_FIELDS.forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    if(el.tagName==='SELECT')el.selectedIndex=0;
+    else if(id==='material_rate')el.value='130';
+    else if(id==='labor_rate')el.value='35';
+    else if(el.tagName==='TEXTAREA')el.value='';
+    else if(el.type==='date')el.value='';
+    else el.value=el.type==='number'?'0':'';
+  });
+  document.getElementById('panel_count').value='1';
+  updatePanels();
+  document.getElementById('extra_cost_body').innerHTML='';
+  calcExtraCost();
+  document.getElementById('result_area').classList.add('hidden');
+}
 const _origSave=saveToLS;
 saveToLS=function(){_origSave();notifyParent();};
+
+// 부모(시뮬레이션)에서 현장 전환 수신
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  if(e.data.type==='est_switch_site'){
+    if(_currentSiteId)_origSave(); // 현재 현장 저장
+    _currentSiteId=e.data.siteId;
+    if(e.data.data){
+      try{localStorage.setItem(getSiteKey(),e.data.data);}catch(ex){}
+    }
+    clearForm();
+    loadFromLS();
+    setTimeout(()=>{
+      const has=['c_7w_n','c_7s_n','c_50_n','c_100_n','c_200_n','c_7w_r','c_7s_r','c_50_r','c_100_r','c_200_r'].some(id=>(parseInt(document.getElementById(id)?.value)||0)>0);
+      if(has)try{runCalcOnly();}catch(ex){}
+      else document.getElementById('result_area').classList.add('hidden');
+    },200);
+  }
+});
 loadFromLS();
 // 복원 후 충전기 수량이 있으면 자동 계산
 setTimeout(()=>{
