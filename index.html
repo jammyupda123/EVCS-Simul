@@ -1166,7 +1166,7 @@ function _saveLS() {
           _context6.n = 1;
           return _DOC.set(d);
         case 1:
-          setTimeout(function(){ _isSavingToFirebase = false; }, 800);
+          setTimeout(function(){ _isSavingToFirebase = false; }, 2500);
           _context6.n = 3;
           break;
         case 2:
@@ -1327,8 +1327,6 @@ function App() {
               if(!data) return;
               try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
               if(data.sites)  setSites(data.sites);
-              if(data.sid)    setSid(data.sid);
-              if(data.nid)    setNid(data.nid);
               if(data.costMap)setCostMap(data.costMap);
               if(data.simMap) setSimMap(data.simMap);
               if(data.logMap) setLogMap(data.logMap);
@@ -9756,7 +9754,7 @@ async function saveLS(d){
   try{
     _isSavingToFirebase2 = true;
     await _DOC.set(d);
-    setTimeout(()=>{ _isSavingToFirebase2 = false; }, 800);
+    setTimeout(()=>{ _isSavingToFirebase2 = false; }, 2500);
   }catch(e){
     _isSavingToFirebase2 = false;
     console.warn('Firebase 저장 실패:', e);
@@ -9839,8 +9837,6 @@ function App(){
         if(!data) return;
         try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
         if(data.sites)  setSites(data.sites);
-        if(data.sid)    setSid(data.sid);
-        if(data.nid)    setNid(data.nid);
         if(data.costMap)setCostMap(data.costMap);
         if(data.simMap) setSimMap(data.simMap);
         if(data.logMap) setLogMap(data.logMap);
