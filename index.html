@@ -1298,47 +1298,66 @@ function loadLS() {
 }
 function _loadLS() {
   _loadLS = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
-    var snap, data, fsnap, d;
+    var snap, data, d, _t3;
     return _regenerator().w(function (_context5) {
       while (1) switch (_context5.p = _context5.n) {
         case 0:
-          if(!_DOC){_context5.n=4;break;}
+          if(!_DOC){_context5.n=3;break;}
           _context5.p = 0;
           _context5.n = 1;
           return _DOC.get();
         case 1:
           snap = _context5.v;
-          if (!snap.exists) { _context5.n = 4; break; }
+          if (!snap.exists) { _context5.n = 3; break; }
           data = snap.data();
-          if(data.fileMap && Object.keys(data.fileMap).length>0){_context5.n=3;break;}
-          _context5.n=2;
-          return _db.collection('ev_charger').doc(_DOC.id+'_files').get();
-        case 2:
-          fsnap=_context5.v;
-          if(fsnap&&fsnap.exists&&fsnap.data().fileMap)data.fileMap=fsnap.data().fileMap;
-        case 3:
           try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
-          return _context5.a(6, data);
-        case 4:
-          _context5.n = 5;
+          return _context5.a(5, data);
+        case 3:
+          _context5.n = 4;
           break;
+        case 4:
+          _context5.p = 4;
+          _t3 = _context5.v;
+          console.warn('Firebase 로드 실패, localStorage 폴백:', _t3);
+          try { d = localStorage.getItem(LS_KEY); return _context5.a(5, d ? JSON.parse(d) : null); } catch(e) { return _context5.a(5, null); }
         case 5:
-          _context5.p = 5;
-          console.warn('Firebase 로드 실패, localStorage 폴백:', _context5.v);
-          try { d = localStorage.getItem(LS_KEY); return _context5.a(6, d ? JSON.parse(d) : null); } catch(e) { return _context5.a(6, null); }
-        case 6:
-          return _context5.a(6);
+          return _context5.a(5);
       }
-    }, _callee5, null, [[0, 5]]);
+    }, _callee5, null, [[0, 4]]);
   }));
   return _loadLS.apply(this, arguments);
 }
+
+// fileMap 분리 로드 래퍼 (트랜스파일용)
+var _origLoadLS = loadLS;
+loadLS = async function(){
+  var data = await _origLoadLS();
+  if(data && _DOC && (!data.fileMap || Object.keys(data.fileMap).length===0)){
+    try{
+      var fsnap = await _db.collection('ev_charger').doc(_DOC.id+'_files').get();
+      if(fsnap && fsnap.exists && fsnap.data().fileMap){ data.fileMap = fsnap.data().fileMap; }
+    }catch(e){}
+  }
+  return data;
+};
+
+// fileMap 분리 저장 래퍼 (트랜스파일용)
+var _origSaveLS = saveLS;
+saveLS = async function(d){
+  if(d && d.fileMap && _DOC){
+    var fmStr = JSON.stringify(d.fileMap);
+    if(fmStr.length > 800000){
+      try{ await _db.collection('ev_charger').doc(_DOC.id+'_files').set({fileMap: d.fileMap}); }catch(e){}
+      d = Object.assign({}, d, {fileMap: {}});
+    }
+  }
+  return _origSaveLS(d);
+};
 function saveLS(_x) {
   return _saveLS.apply(this, arguments);
 } // 데이터 내보내기 (JSON 파일 다운로드)
 function _saveLS() {
   _saveLS = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(d) {
-    var saveData, fileMapStr;
     return _regenerator().w(function (_context6) {
       while (1) switch (_context6.n) {
         case 0:
@@ -1346,16 +1365,10 @@ function _saveLS() {
             localStorage.setItem(LS_KEY, JSON.stringify(d));
           } catch (e) {}
           if(!_DOC){_context6.n=3;break;}
-          saveData = Object.assign({}, d);
-          fileMapStr = JSON.stringify(d.fileMap || {});
-          if(fileMapStr.length > 800000) {
-            saveData.fileMap = {};
-            try{ _db.collection('ev_charger').doc(_DOC.id + '_files').set({fileMap: d.fileMap}); }catch(e2){}
-          }
           _context6.p = 0;
           _isSavingToFirebase = true;
           _context6.n = 1;
-          return _DOC.set(saveData);
+          return _DOC.set(d);
         case 1:
           setTimeout(function(){ _isSavingToFirebase = false; }, 2500);
           _context6.n = 3;
