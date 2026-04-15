@@ -1298,32 +1298,38 @@ function loadLS() {
 }
 function _loadLS() {
   _loadLS = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
-    var snap, data, d, _t3;
+    var snap, data, fsnap, d;
     return _regenerator().w(function (_context5) {
       while (1) switch (_context5.p = _context5.n) {
         case 0:
-          if(!_DOC){_context5.n=3;break;}
+          if(!_DOC){_context5.n=4;break;}
           _context5.p = 0;
           _context5.n = 1;
           return _DOC.get();
         case 1:
           snap = _context5.v;
-          if (!snap.exists) { _context5.n = 3; break; }
+          if (!snap.exists) { _context5.n = 4; break; }
           data = snap.data();
-          try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
-          return _context5.a(5, data);
+          if(data.fileMap && Object.keys(data.fileMap).length>0){_context5.n=3;break;}
+          _context5.n=2;
+          return _db.collection('ev_charger').doc(_DOC.id+'_files').get();
+        case 2:
+          fsnap=_context5.v;
+          if(fsnap&&fsnap.exists&&fsnap.data().fileMap)data.fileMap=fsnap.data().fileMap;
         case 3:
-          _context5.n = 4;
-          break;
+          try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+          return _context5.a(6, data);
         case 4:
-          _context5.p = 4;
-          _t3 = _context5.v;
-          console.warn('Firebase 로드 실패, localStorage 폴백:', _t3);
-          try { d = localStorage.getItem(LS_KEY); return _context5.a(5, d ? JSON.parse(d) : null); } catch(e) { return _context5.a(5, null); }
+          _context5.n = 5;
+          break;
         case 5:
-          return _context5.a(5);
+          _context5.p = 5;
+          console.warn('Firebase 로드 실패, localStorage 폴백:', _context5.v);
+          try { d = localStorage.getItem(LS_KEY); return _context5.a(6, d ? JSON.parse(d) : null); } catch(e) { return _context5.a(6, null); }
+        case 6:
+          return _context5.a(6);
       }
-    }, _callee5, null, [[0, 4]]);
+    }, _callee5, null, [[0, 5]]);
   }));
   return _loadLS.apply(this, arguments);
 }
@@ -1332,6 +1338,7 @@ function saveLS(_x) {
 } // 데이터 내보내기 (JSON 파일 다운로드)
 function _saveLS() {
   _saveLS = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(d) {
+    var saveData, fileMapStr;
     return _regenerator().w(function (_context6) {
       while (1) switch (_context6.n) {
         case 0:
@@ -1339,10 +1346,16 @@ function _saveLS() {
             localStorage.setItem(LS_KEY, JSON.stringify(d));
           } catch (e) {}
           if(!_DOC){_context6.n=3;break;}
+          saveData = Object.assign({}, d);
+          fileMapStr = JSON.stringify(d.fileMap || {});
+          if(fileMapStr.length > 800000) {
+            saveData.fileMap = {};
+            try{ _db.collection('ev_charger').doc(_DOC.id + '_files').set({fileMap: d.fileMap}); }catch(e2){}
+          }
           _context6.p = 0;
           _isSavingToFirebase = true;
           _context6.n = 1;
-          return _DOC.set(d);
+          return _DOC.set(saveData);
         case 1:
           setTimeout(function(){ _isSavingToFirebase = false; }, 2500);
           _context6.n = 3;
@@ -1399,6 +1412,8 @@ function importData(onSuccess) {
             case 0:
               _context.p = 0;
               data = JSON.parse(ev.target.result);
+              if(!data.logMap) data.logMap={};
+              if(!data.fileMap) data.fileMap={};
               if (!(data.sites && data.costMap && data.simMap)) {
                 _context.n = 2;
                 break;
@@ -1408,7 +1423,7 @@ function importData(onSuccess) {
             case 1:
               onSuccess(data);
               alert('불러오기 완료! 현장 ' + data.sites.length + '개가 복원됩니다.');
-              location.reload();
+              setTimeout(function(){location.reload();}, 500);
               _context.n = 3;
               break;
             case 2:
@@ -9937,6 +9952,13 @@ async function loadLS(){
     const snap = await _DOC.get();
     if(snap.exists){
       const data = snap.data();
+      // 분리 저장된 fileMap 로드
+      if(!data.fileMap || Object.keys(data.fileMap).length===0){
+        try{
+          const fsnap = await _db.collection('ev_charger').doc(_DOC.id+'_files').get();
+          if(fsnap.exists&&fsnap.data().fileMap) data.fileMap=fsnap.data().fileMap;
+        }catch(e){}
+      }
       try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
       return data;
     }
@@ -9949,8 +9971,15 @@ async function saveLS(d){
   try{ localStorage.setItem(LS_KEY,JSON.stringify(d)); }catch(e){}
   if(!_DOC) return;
   try{
+    // Firestore 1MB 제한: fileMap이 크면 분리 저장
+    var saveData = Object.assign({}, d);
+    var fileMapStr = JSON.stringify(d.fileMap || {});
+    if(fileMapStr.length > 800000) {
+      saveData.fileMap = {}; // 본문에서 제거
+      try{ await _db.collection('ev_charger').doc(_DOC.id + '_files').set({fileMap: d.fileMap}); }catch(e2){ console.warn('fileMap 분리저장 실패:', e2); }
+    }
     _isSavingToFirebase2 = true;
-    await _DOC.set(d);
+    await _DOC.set(saveData);
     setTimeout(()=>{ _isSavingToFirebase2 = false; }, 2500);
   }catch(e){
     _isSavingToFirebase2 = false;
@@ -9989,12 +10018,20 @@ function importData(onSuccess){
       try{
         const data=JSON.parse(ev.target.result);
         if(data.sites&&data.costMap&&data.simMap){
-          await saveLS(data); onSuccess(data);
+          // logMap/fileMap 없으면 빈 객체로 보충
+          if(!data.logMap) data.logMap={};
+          if(!data.fileMap) data.fileMap={};
+          await saveLS(data);
+          onSuccess(data);
           alert('불러오기 완료! 현장 '+data.sites.length+'개가 복원됩니다.');
-          location.reload();
-        } else { alert('올바른 백업 파일이 아닙니다.'); }
-      }catch{ alert('파일을 읽는 중 오류가 발생했습니다.'); }
+          setTimeout(()=>location.reload(), 500);
+        } else { alert('올바른 백업 파일이 아닙니다.\n필요한 키: sites, costMap, simMap\n파일 키: '+Object.keys(data).join(', ')); }
+      }catch(err){ alert('파일을 읽는 중 오류가 발생했습니다.\n'+err.message); }
     };
+    reader.readAsText(file);
+  };
+  input.click();
+};
     reader.readAsText(file);
   };
   input.click();
