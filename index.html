@@ -56,10 +56,9 @@
     _DOC = _db.collection('ev_charger').doc('data_' + user.id);
     localStorage.setItem('est_user_id', user.id);
     localStorage.setItem('est_user_name', user.name);
-    document.getElementById('user-label').textContent = '👤 ' + user.name;
+    var lbl = document.getElementById('user-label');
+    if(lbl) lbl.textContent = '👤 ' + user.name;
     document.getElementById('user-select-overlay').style.display = 'none';
-    document.getElementById('root').style.display = '';
-    // 앱이 이미 로드된 경우 리로드
     if (window._appLoaded) location.reload();
   }
 
@@ -72,9 +71,9 @@
       if (found) {
         _currentUser = found;
         _DOC = _db.collection('ev_charger').doc('data_' + found.id);
-        document.getElementById('user-label').textContent = '👤 ' + found.name;
+        var lbl = document.getElementById('user-label');
+        if(lbl) lbl.textContent = '👤 ' + found.name;
         document.getElementById('user-select-overlay').style.display = 'none';
-        document.getElementById('root').style.display = '';
         return;
       }
     }
@@ -83,9 +82,7 @@
   }
 
   function showUserModal(users) {
-    document.getElementById('root').style.display = 'none';
-    const overlay = document.getElementById('user-select-overlay');
-    overlay.style.display = 'flex';
+    document.getElementById('user-select-overlay').style.display = 'flex';
     const list = document.getElementById('user-modal-list');
     list.innerHTML = users.map(u =>
       '<div class="um-item" onclick="selectExistingUser(\'' + u.id + '\',\'' + u.name.replace(/'/g,"\\\'") + '\')">' +
@@ -10003,10 +10000,6 @@ function importData(onSuccess){
     reader.readAsText(file);
   };
   input.click();
-};
-    reader.readAsText(file);
-  };
-  input.click();
 }
 
 /* ══════════════════ APP ══════════════════ */
@@ -12787,6 +12780,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 
 <script>
 window._appLoaded = true;
-initUserSelection();
+// React 마운트 후 실행
+setTimeout(function(){ initUserSelection(); }, 1000);
 </script>
 </body></html>
