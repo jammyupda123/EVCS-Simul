@@ -5313,18 +5313,12 @@ function CostTab(_ref16) {
   // Which case is currently active in sim tab
   var activeCaseType = (sm === null || sm === void 0 ? void 0 : sm.contractType) === 'new' ? 'N' : (sm === null || sm === void 0 ? void 0 : sm.caseType) || 'B';
 
-  // Charger items CRUD
-  var _useState61 = useState(100),
-    _useState62 = _slicedToArray(_useState61, 2),
-    nextCid = _useState62[0],
-    setNextCid = _useState62[1];
+  // Charger items CRUD — ID를 현재 항목에서 매번 계산
   var addChargerItem = function addChargerItem() {
-    var id = nextCid;
-    setNextCid(function (n) {
-      return n + 1;
-    });
+    var items = cd.chargerItems || [];
+    var id = items.length === 0 ? 100 : Math.max.apply(null, items.map(function(i){return i.id||0;})) + 1;
     updCost({
-      chargerItems: [].concat(_toConsumableArray(cd.chargerItems || []), [{
+      chargerItems: [].concat(_toConsumableArray(items), [{
         id: id,
         kw: 7,
         model: 'HEV-S1007A',
@@ -5349,18 +5343,12 @@ function CostTab(_ref16) {
     });
   };
 
-  // Elec items CRUD
-  var _useState63 = useState(200),
-    _useState64 = _slicedToArray(_useState63, 2),
-    nextEid = _useState64[0],
-    setNextEid = _useState64[1];
+  // Elec items CRUD — ID를 현재 항목에서 매번 계산
   var addElecItem = function addElecItem() {
-    var id = nextEid;
-    setNextEid(function (n) {
-      return n + 1;
-    });
+    var items = cd.elecItems || [];
+    var id = items.length === 0 ? 200 : Math.max.apply(null, items.map(function(i){return i.id||0;})) + 1;
     updCost({
-      elecItems: [].concat(_toConsumableArray(cd.elecItems || []), [{
+      elecItems: [].concat(_toConsumableArray(items), [{
         id: id,
         name: '',
         qty: 0,
@@ -11342,19 +11330,20 @@ function CostTab({site,cd,sm,updCost}){
   const activeCaseType=sm?.contractType==='new'?'N':(sm?.caseType||'B');
 
   // Charger items CRUD
-  const [nextCid,setNextCid]=useState(100);
+  // Charger items CRUD — ID를 현재 항목에서 매번 계산
   const addChargerItem=()=>{
-    const id=nextCid;setNextCid(n=>n+1);
-    updCost({chargerItems:[...(cd.chargerItems||[]),{id,kw:7,model:'HEV-S1007A',location:'옥내',qty:0,unitPrice:0}]});
+    const items=cd.chargerItems||[];
+    const id=items.length===0?100:Math.max(...items.map(i=>i.id||0))+1;
+    updCost({chargerItems:[...items,{id,kw:7,model:'HEV-S1007A',location:'옥내',qty:0,unitPrice:0}]});
   };
   const updChargerItem=(id,p)=>updCost({chargerItems:(cd.chargerItems||[]).map(i=>i.id===id?{...i,...p}:i)});
   const delChargerItem=(id)=>updCost({chargerItems:(cd.chargerItems||[]).filter(i=>i.id!==id)});
 
-  // Elec items CRUD
-  const [nextEid,setNextEid]=useState(200);
+  // Elec items CRUD — ID를 현재 항목에서 매번 계산
   const addElecItem=()=>{
-    const id=nextEid;setNextEid(n=>n+1);
-    updCost({elecItems:[...(cd.elecItems||[]),{id,name:'',qty:0,unit:'식',unitPrice:0}]});
+    const items=cd.elecItems||[];
+    const id=items.length===0?200:Math.max(...items.map(i=>i.id||0))+1;
+    updCost({elecItems:[...items,{id,name:'',qty:0,unit:'식',unitPrice:0}]});
   };
   const updElecItem=(id,p)=>updCost({elecItems:(cd.elecItems||[]).map(i=>i.id===id?{...i,...p}:i)});
   const delElecItem=(id)=>updCost({elecItems:(cd.elecItems||[]).filter(i=>i.id!==id)});
