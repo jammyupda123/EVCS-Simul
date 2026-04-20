@@ -312,6 +312,15 @@ const CHARGER_PRICE={
   '200kW_신규':19090000,'200kW_교체':680000,'200kW_안착':590000,
 };
 
+// 철거 단가 (VAT별도, Data_단가 D열) — [주간, 야간]
+const DEMOLISH_PRICE={
+  '7kW_벽부':  {A:[136364,181818], B:[272727,318182], C:[454545,545455]},
+  '7kW_스탠드':{A:[181818,227273], B:[363636,409091], C:[545455,636364]},
+  '50kW':     {A:[454545,545455], B:[1818182,2090909], C:[3181818,3636364]},
+  '100kW':    {A:[500000,590909], B:[2863636,3318182], C:[5227273,6000000]},
+  '200kW':    {A:[545455,636364], B:[5045455,5818182], C:[9545455,11000000]}
+};
+
 // 일위대가 단가 [재료비(적용후), 노무비(적용후)] — 기본 적용율 130%/35% 기준 캐시
 const UNIT_COST={
   '금속관_16C':[4100,5747],'금속관_22C':[5301,6896],'금속관_28C':[6910,9195],'금속관_36C':[8817,11494],
@@ -346,12 +355,25 @@ const UNIT_COST={
 };
 const DEF_MAT_RATE=1.3, DEF_LAB_RATE=0.35;
 
-function calcCost(chargers, sheet5, matRate, labRate){
+function calcCost(chargers, sheet5, matRate, labRate, workTime){
   // 1. 단가공사비
   let unitCost=0;
   const unitDetail=[];
+  const isNight=(workTime==='야간')?1:0;
   for(const[k,qty]of Object.entries(chargers)){
     if(k.includes('철거범위'))continue;
+    if(k.includes('철거')&&qty>0){
+      // 철거: 범위(A/B/C)에 따라 단가 결정
+      const base=k.replace('_철거','');
+      const scope=chargers[k.replace('철거','철거범위')]||'A';
+      const dp=DEMOLISH_PRICE[base];
+      if(dp&&dp[scope]){
+        const price=dp[scope][isNight];
+        unitCost+=price*qty;
+        unitDetail.push({name:k+'('+scope+')',qty,price,sub:price*qty});
+      }
+      continue;
+    }
     const price=CHARGER_PRICE[k];
     if(price&&qty>0){unitCost+=price*qty; unitDetail.push({name:k,qty,price,sub:price*qty});}
   }
@@ -732,7 +754,7 @@ function runCalculation(){
   const chDict=buildChargersDict(tc2);
   const matR=(parseFloat(document.getElementById('material_rate').value)||130)/100;
   const labR=(parseFloat(document.getElementById('labor_rate').value)||35)/100;
-  const cost=calcCost(chDict,mergedS5,matR,labR);
+  const cost=calcCost(chDict,mergedS5,matR,labR,document.getElementById('work_time').value);
   const extraItems=getExtraCostItems();
   const extraTotal=extraItems.reduce((s,it)=>s+it.qty*it.price,0);
   cost.extraItems=extraItems;cost.extraTotal=extraTotal;
