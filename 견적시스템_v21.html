@@ -846,6 +846,51 @@ function showResults(results,ms5,mb){
   }
   rows+=`<tr style="background:#EEECEA;font-weight:600"><td colspan="3">합계</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap">${sumTotal.toLocaleString()}원</td><td></td></tr>`;
   tbody.innerHTML=rows;noneEl.classList.add('hidden');
+  // s5-edit 변경 시 자동 재계산 (IP전주, MCCB, 사용자 직접 편집 모두 반영)
+  tbody.querySelectorAll('.s5-edit').forEach(el=>{el.oninput=recalcOnS5Change;});
+}
+
+// s5 입력값 변경 시: 각 행 공급가액/공구손료/소모잡자재/합계 + 비용요약 모두 갱신
+function recalcOnS5Change(){
+  if(!lastCalcResults)return;
+  const tbody=document.getElementById('result_s5_body');
+  if(!tbody)return;
+  let sumTotal=0,wireMat=0,totalLab=0;
+  // 각 s5-edit 행 공급가액 갱신 + 합산
+  tbody.querySelectorAll('.s5-edit').forEach(el=>{
+    const k=el.dataset.s5key;
+    const q=parseFloat(el.value)||0;
+    const uc=UNIT_COST[k];
+    const uprice=uc?(uc[0]+uc[1]):0;
+    const total=Math.floor(q*uprice);
+    sumTotal+=total;
+    if(uc&&/^(FGV|FCV|금속관|ELP|트레이)/.test(k)){wireMat+=Math.floor(q*uc[0]);totalLab+=Math.floor(q*uc[1]);}
+    const tr=el.closest('tr');
+    if(tr){const tds=tr.querySelectorAll('td');if(tds[3])tds[3].textContent=total?total.toLocaleString()+'원':'—';}
+  });
+  // 공구손료/소모잡자재/합계 행 갱신
+  const trs=tbody.querySelectorAll('tr');
+  const toolFee=Math.floor(totalLab*0.03);
+  const miscMat=Math.floor(wireMat*0.02);
+  sumTotal+=toolFee+miscMat;
+  for(const tr of trs){
+    const txt=tr.textContent;
+    const tds=tr.querySelectorAll('td');
+    if(txt.startsWith('공구손료')&&tds[3]){tds[3].textContent=toolFee.toLocaleString()+'원';}
+    else if(txt.startsWith('소모잡자재')&&tds[3]){tds[3].textContent=miscMat.toLocaleString()+'원';}
+    else if(txt.startsWith('합계')&&tds[1]){tds[1].textContent=sumTotal.toLocaleString()+'원';}
+  }
+  // 비용 요약 재계산
+  const tc=getTotalChargers();
+  const chDict=buildChargersDict(tc);
+  const matR=(parseFloat(document.getElementById('material_rate').value)||130)/100;
+  const labR=(parseFloat(document.getElementById('labor_rate').value)||35)/100;
+  const domS5=getEditedSheet5();
+  const cost=calcCost(chDict,domS5,matR,labR,document.getElementById('work_time').value);
+  const extraItems=getExtraCostItems();
+  const extraTotal=extraItems.reduce((s,it)=>s+it.qty*it.price,0);
+  cost.extraItems=extraItems;cost.extraTotal=extraTotal;cost.grandTotal+=extraTotal;
+  showCostSummary(cost);
 }
 
 function fmt(n){return n.toLocaleString('ko-KR')+'원';}
