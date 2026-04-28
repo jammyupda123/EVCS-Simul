@@ -184,9 +184,9 @@ body.mobile .top-bar h1{font-size:17px}
 <div class="card">
 <h2>도색구성 (추가 도색만 입력)</h2>
 <div class="row">
-  <div class="field"><label>1도 도색 (면수)</label><input id="paint_1d" type="number" min="0" value="0"><div class="hint">완속 단가에 기본 포함 / 추가분만 입력</div></div>
-  <div class="field"><label>2도 도색 (면수)</label><input id="paint_2d" type="number" min="0" value="0"><div class="hint">급속 단가에 기본 포함 / 180,000원/면</div></div>
-  <div class="field"><label>에폭시 2도 도색 (면수)</label><input id="paint_ep" type="number" min="0" value="0"><div class="hint">급속 단가에 기본 포함 / 200,000원/면</div></div>
+  <div class="field"><label>1도 도색 (면수)</label><input id="paint_1d" type="number" min="0" value="0" oninput="recalcOnPaintChange()"><div class="hint">완속 단가에 기본 포함 / 60,000원/면</div></div>
+  <div class="field"><label>2도 도색 (면수)</label><input id="paint_2d" type="number" min="0" value="0" oninput="recalcOnPaintChange()"><div class="hint">급속 단가에 기본 포함 / 180,000원/면</div></div>
+  <div class="field"><label>에폭시 2도 도색 (면수)</label><input id="paint_ep" type="number" min="0" value="0" oninput="recalcOnPaintChange()"><div class="hint">급속 단가에 기본 포함 / 200,000원/면</div></div>
 </div>
 </div>
 </div>
@@ -355,7 +355,7 @@ const UNIT_COST={
 };
 const DEF_MAT_RATE=1.3, DEF_LAB_RATE=0.35;
 
-function calcCost(chargers, sheet5, matRate, labRate, workTime){
+function calcCost(chargers, sheet5, matRate, labRate, workTime, paint){
   // 1. 단가공사비
   let unitCost=0;
   const unitDetail=[];
@@ -376,6 +376,16 @@ function calcCost(chargers, sheet5, matRate, labRate, workTime){
     }
     const price=CHARGER_PRICE[k];
     if(price&&qty>0){unitCost+=price*qty; unitDetail.push({name:k,qty,price,sub:price*qty});}
+  }
+
+  // 1-2. 도색 추가분 (sheet3 행 29~31 / 엑셀과 동일하게 단가공사비에 포함)
+  if(paint){
+    const PAINT_PRICE={p1:60000,p2:180000,pep:200000};
+    const PAINT_NAME={p1:'1도 도색',p2:'2도 도색',pep:'에폭시 2도 도색'};
+    for(const k of ['p1','p2','pep']){
+      const q=paint[k]||0;
+      if(q>0){const p=PAINT_PRICE[k];const sub=p*q;unitCost+=sub;unitDetail.push({name:PAINT_NAME[k],qty:q,price:p,sub});}
+    }
   }
 
   // 2. 추가전기공사비
@@ -754,7 +764,8 @@ function runCalculation(){
   const chDict=buildChargersDict(tc2);
   const matR=(parseFloat(document.getElementById('material_rate').value)||130)/100;
   const labR=(parseFloat(document.getElementById('labor_rate').value)||35)/100;
-  const cost=calcCost(chDict,mergedS5,matR,labR,document.getElementById('work_time').value);
+  const paint={p1:gv('paint_1d'),p2:gv('paint_2d'),pep:gv('paint_ep')};
+  const cost=calcCost(chDict,mergedS5,matR,labR,document.getElementById('work_time').value,paint);
   const extraItems=getExtraCostItems();
   const extraTotal=extraItems.reduce((s,it)=>s+it.qty*it.price,0);
   cost.extraItems=extraItems;cost.extraTotal=extraTotal;
@@ -885,12 +896,19 @@ function recalcOnS5Change(){
   const chDict=buildChargersDict(tc);
   const matR=(parseFloat(document.getElementById('material_rate').value)||130)/100;
   const labR=(parseFloat(document.getElementById('labor_rate').value)||35)/100;
+  const paint={p1:gv('paint_1d'),p2:gv('paint_2d'),pep:gv('paint_ep')};
   const domS5=getEditedSheet5();
-  const cost=calcCost(chDict,domS5,matR,labR,document.getElementById('work_time').value);
+  const cost=calcCost(chDict,domS5,matR,labR,document.getElementById('work_time').value,paint);
   const extraItems=getExtraCostItems();
   const extraTotal=extraItems.reduce((s,it)=>s+it.qty*it.price,0);
   cost.extraItems=extraItems;cost.extraTotal=extraTotal;cost.grandTotal+=extraTotal;
   showCostSummary(cost);
+}
+
+// 도색 입력값 변경 시: 비용 요약만 재계산 (sheet5 합계는 영향 없음)
+function recalcOnPaintChange(){
+  if(!lastCalcResults)return;
+  recalcOnS5Change();
 }
 
 function fmt(n){return n.toLocaleString('ko-KR')+'원';}
