@@ -781,9 +781,9 @@ function calcCostTotals(cd) {
   var elecExVAT = (cd.elecItems || []).reduce(function (s, i) {
     return s + (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0);
   }, 0);
-  var inspEx = pts ? inspEx_pts : cd.includeInsp ? calcInsp(kw) : 0;
-  var safetyEx = pts ? safetyEx_pts : cd.includeSafety ? calcSafety(kw, cd.buildingType) : 0;
-  var kepcoEx = pts ? kepcoEx_pts : cd.includeKepco ? calcKepco(kw, cd.powerSupplyType) : 0;
+  var inspEx = cd.includeInsp ? (pts ? inspEx_pts : calcInsp(kw)) : 0;
+  var safetyEx = cd.includeSafety ? (pts ? safetyEx_pts : calcSafety(kw, cd.buildingType)) : 0;
+  var kepcoEx = cd.includeKepco ? (pts ? kepcoEx_pts : calcKepco(kw, cd.powerSupplyType)) : 0;
   var supervEx = cd.includeSupv ? calcSupv(kw) : 0;
   // 전기안전관리자 (VAT별도, 직접 입력)
   var elecMgrEx = cd.includeElecMgr ? parseFloat(cd.elecMgrFee) || 0 : 0;
@@ -9668,9 +9668,9 @@ function calcCostTotals(cd) {
   const standExVAT=(cd.standQty||0)*(cd.standUnitPrice||0);
   const canopyExVAT=(cd.canopyQty||0)*(cd.canopyUnitPrice||0);
   const elecExVAT=(cd.elecItems||[]).reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.unitPrice)||0),0);
-  const inspEx      = pts ? inspEx_pts   : (cd.includeInsp  ?calcInsp(kw):0);
-  const safetyEx    = pts ? safetyEx_pts : (cd.includeSafety?calcSafety(kw,cd.buildingType):0);
-  const kepcoEx     = pts ? kepcoEx_pts  : (cd.includeKepco ?calcKepco(kw,cd.powerSupplyType):0);
+  const inspEx      = cd.includeInsp   ? (pts ? inspEx_pts   : calcInsp(kw)) : 0;
+  const safetyEx    = cd.includeSafety ? (pts ? safetyEx_pts : calcSafety(kw,cd.buildingType)) : 0;
+  const kepcoEx     = cd.includeKepco  ? (pts ? kepcoEx_pts  : calcKepco(kw,cd.powerSupplyType)) : 0;
   const supervEx    =cd.includeSupv      ?calcSupv(kw):0;
   // 전기안전관리자 (VAT별도, 직접 입력)
   const elecMgrEx   =cd.includeElecMgr  ?(parseFloat(cd.elecMgrFee)||0):0;
